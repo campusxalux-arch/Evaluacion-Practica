@@ -101,7 +101,20 @@ export default function ExamSession({ questions, onComplete, userName }: ExamSes
       category: currentQuestion.category
     };
 
-    setAnswers((prev) => [...prev, newAnswer]);
+    const updatedAnswers = [...answers, newAnswer];
+    setAnswers(updatedAnswers);
+
+    // Auto-advance to the next question automatically after a brief visual feedback pause
+    setTimeout(() => {
+      if (currentIndex < questions.length - 1) {
+        setCurrentIndex((prev) => prev + 1);
+        setSelectedOption(null);
+        setIsAnswered(false);
+      } else {
+        if (timerRef.current) clearInterval(timerRef.current);
+        onComplete(updatedAnswers, formatTime(secondsElapsed));
+      }
+    }, 300);
   };
 
   const handleNext = () => {
