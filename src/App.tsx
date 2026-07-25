@@ -150,7 +150,7 @@ export default function App() {
 
                 <div className="mt-6 p-3.5 bg-blue-50/80 border border-blue-100 rounded-2xl text-left">
                   <p className="text-[11px] text-blue-800 leading-relaxed">
-                    Cada examen consta de <strong>40 preguntas</strong> seleccionadas aleatoriamente: <strong>8 Mecánica</strong>, <strong>12 Conducción</strong>, <strong>10 Infraestructura</strong> y <strong>10 Normativa</strong>.
+                    Las preguntas se presentan en el orden secuencial del banco correspondiente (Preoperacional y Conducción).
                   </p>
                 </div>
               </motion.div>
