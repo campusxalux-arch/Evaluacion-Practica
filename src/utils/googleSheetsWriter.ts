@@ -279,8 +279,8 @@ export async function writeResultsToSheets(
       data.empresa || "",
       data.tipoLicencia || "",
       data.bancoUsado || (data.tipoLicencia === "Motocicleta" ? "Banco 1" : "Banco 2"),
-      `${preopPct}% (${preopConforme} C / ${preopNoConforme} NC / ${preopNA} N/A)`,
-      `${condPct}% (${condConforme} C / ${condNoConforme} NC / ${condNA} N/A)`,
+      `${preopPct}%`,
+      `${condPct}%`,
       `${globalScore}%`,
       dictamen,
       data.tiempoEmpleado || "0:00"

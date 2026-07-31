@@ -41,6 +41,7 @@ export interface AnswerDetail {
   correcta?: string;
   esCorrecta?: boolean;
   category?: string;
+  comentario?: string;
 }
 
 export interface ExamResult {
