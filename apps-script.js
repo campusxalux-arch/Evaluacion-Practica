@@ -248,19 +248,15 @@ function saveResultsToSheets(data) {
   const resHeaders = [
     "FECHA", 
     "HORA", 
-    "TIPO IDENTIFICACIÓN", 
-    "NÚMERO IDENTIFICACIÓN", 
+    "IDENTIFICACIÓN", 
     "NOMBRE COMPLETO", 
-    "EDAD", 
     "EMPRESA", 
-    "AÑOS ANTIGÜEDAD", 
-    "TIPO LICENCIA", 
-    "PORCENTAJE MECÁNICA", 
-    "PORCENTAJE SITUACIONES DE CONDUCCIÓN", 
-    "PORCENTAJE INFRAESTRUCTURA", 
-    "PORCENTAJE NORMATIVA VIAL", 
+    "TIPO VEHÍCULO", 
+    "BANCO USADO", 
+    "PREOPERACIONAL (%)", 
+    "CONDUCCIÓN (%)", 
     "PUNTAJE GLOBAL (%)", 
-    "RESULTADO GLOBAL", 
+    "DICTAMEN FINAL", 
     "TIEMPO EMPLEADO"
   ];
 
@@ -268,16 +264,9 @@ function saveResultsToSheets(data) {
   if (resSheet.getLastRow() === 0) {
     resSheet.appendRow(resHeaders);
     resSheet.getRange(1, 1, 1, resHeaders.length).setFontWeight("bold").setBackground("#0f766e").setFontColor("white");
-  } else {
-    const valResA1 = String(resSheet.getRange(1, 1).getValue()).trim().toUpperCase();
-    if (valResA1 !== "FECHA") {
-      resSheet.insertRowBefore(1);
-      resSheet.getRange(1, 1, 1, resHeaders.length).setValues([resHeaders]);
-      resSheet.getRange(1, 1, 1, resHeaders.length).setFontWeight("bold").setBackground("#0f766e").setFontColor("white");
-    }
   }
 
-  // Extraer y sanitizar datos numéricos para prevenir errores #NUM!
+  // Extraer y sanitizar datos numéricos
   const fecha = data.fecha || new Date().toLocaleDateString("es-CO");
   const hora = data.hora || new Date().toLocaleTimeString("es-CO");
   const correctas = Number(data.correctas) || 0;
@@ -291,8 +280,8 @@ function saveResultsToSheets(data) {
     fecha,
     hora,
     data.tipoIdentificacion || "",
-    data.numeroIdentificacion || "",
-    data.nombreCompleto || "",
+    data.numeroIdentificacion || data.identificacion || "",
+    data.nombreCompleto || data.nombre || "",
     edad,
     data.empresa || "",
     antiguedad,
@@ -300,79 +289,48 @@ function saveResultsToSheets(data) {
     correctas,
     incorrectas,
     puntaje + "%",
-    data.resultado || "No aprobado",
+    data.resultado || data.dictamen || "No aprobado",
     data.tiempoEmpleado || "0:00"
   ]);
 
   // Calcular porcentajes por módulo para Hoja 2 "Resultados"
-  let mecTotal = 0, mecCorrect = 0;
+  let preopTotal = 0, preopCorrect = 0;
   let condTotal = 0, condCorrect = 0;
-  let infraTotal = 0, infraCorrect = 0;
-  let normTotal = 0, normCorrect = 0;
 
   if (data.detalles && Array.isArray(data.detalles)) {
     data.detalles.forEach(function(det) {
       const cat = (det.category || "").toLowerCase();
-      const qId = Number(det.preguntaId) || 0;
-      const isCorrect = det.esCorrecta === true || det.esCorrecta === "SÍ" || det.esCorrecta === "SI";
+      const isCorrect = det.esCorrecta === true || det.esCorrecta === "SÍ" || det.esCorrecta === "SI" || det.elegida === "Conforme";
+      const isNA = det.elegida === "No aplica (N/A)";
 
-      let moduleType = "";
-      if (cat.indexOf("mecán") !== -1 || cat.indexOf("mecan") !== -1) {
-        moduleType = "mecanica";
-      } else if (cat.indexOf("situac") !== -1 || cat.indexOf("conduc") !== -1) {
-        moduleType = "conduccion";
-      } else if (cat.indexOf("infraestruc") !== -1) {
-        moduleType = "infraestructura";
-      } else if (cat.indexOf("normat") !== -1 || cat.indexOf("norma") !== -1 || cat.indexOf("vial") !== -1 || cat.indexOf("tránsito") !== -1 || cat.indexOf("transito") !== -1) {
-        moduleType = "normativa";
-      } else if (qId >= 1 && qId <= 8) {
-        moduleType = "mecanica";
-      } else if (qId >= 9 && qId <= 20) {
-        moduleType = "conduccion";
-      } else if (qId >= 21 && qId <= 30) {
-        moduleType = "infraestructura";
-      } else {
-        moduleType = "normativa";
-      }
-
-      if (moduleType === "mecanica") {
-        mecTotal++;
-        if (isCorrect) mecCorrect++;
-      } else if (moduleType === "conduccion") {
-        condTotal++;
-        if (isCorrect) condCorrect++;
-      } else if (moduleType === "infraestructura") {
-        infraTotal++;
-        if (isCorrect) infraCorrect++;
-      } else if (moduleType === "normativa") {
-        normTotal++;
-        if (isCorrect) normCorrect++;
+      if (!isNA) {
+        if (cat.indexOf("preoperacional") !== -1) {
+          preopTotal++;
+          if (isCorrect) preopCorrect++;
+        } else if (cat.indexOf("conducción") !== -1 || cat.indexOf("conduccion") !== -1) {
+          condTotal++;
+          if (isCorrect) condCorrect++;
+        }
       }
     });
   }
 
-  const mecPct = mecTotal > 0 ? Math.round((mecCorrect / mecTotal) * 100) : 0;
-  const condPct = condTotal > 0 ? Math.round((condCorrect / condTotal) * 100) : 0;
-  const infraPct = infraTotal > 0 ? Math.round((infraCorrect / infraTotal) * 100) : 0;
-  const normPct = normTotal > 0 ? Math.round((normCorrect / normTotal) * 100) : 0;
+  const preopPct = preopTotal > 0 ? Math.round((preopCorrect / preopTotal) * 100) : (data.preoperacionalPct || 0);
+  const condPct = condTotal > 0 ? Math.round((condCorrect / condTotal) * 100) : (data.conduccionPct || 0);
 
   // Escribir fila limpia en Hoja 2 "Resultados"
   resSheet.appendRow([
     fecha,
     hora,
-    data.tipoIdentificacion || "",
-    data.numeroIdentificacion || "",
-    data.nombreCompleto || "",
-    edad,
+    data.numeroIdentificacion || data.identificacion || "",
+    data.nombreCompleto || data.nombre || "",
     data.empresa || "",
-    antiguedad,
     data.tipoLicencia || "",
-    mecPct + "%",
+    data.bancoUsado || (data.tipoLicencia === "Motocicleta" ? "Banco 1" : "Banco 2"),
+    preopPct + "%",
     condPct + "%",
-    infraPct + "%",
-    normPct + "%",
     puntaje + "%",
-    data.resultado || "No aprobado",
+    data.resultado || data.dictamen || "NO APROBADO",
     data.tiempoEmpleado || "0:00"
   ]);
 
